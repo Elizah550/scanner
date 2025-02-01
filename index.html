@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Report Scanner</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/2.1.0/tesseract.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        table { width: 80%; margin: 20px auto; border-collapse: collapse; }
+        th, td { border: 1px solid black; padding: 8px; text-align: center; cursor: pointer; }
+        th { background-color: #f2f2f2; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <h2>Sales Report Scanner</h2>
+    <input type="file" id="imageInput" accept="image/*" capture="environment">
+    <button onclick="scanTable()">Scan Table from Image</button>
+    <br><br>
+    <table id="salesTable">
+        <thead>
+            <tr><th>Column 1</th><th>Column 2</th></tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+    <button onclick="calculateSum()">Calculate Sum</button>
+    <button onclick="applyMultiplier()">Apply Multiplier</button>
+    <br><br>
+    <p id="result"></p>
+    <script>
+        function scanTable() {
+            const imageInput = document.getElementById('imageInput').files[0];
+            if (!imageInput) { alert("Please upload an image first."); return; }
+            
+            Tesseract.recognize(
+                imageInput,
+                'eng',
+                { logger: m => console.log(m) }
+            ).then(({ data: { text } }) => {
+                parseTextToTable(text);
+            });
+        }
+        
+        function parseTextToTable(text) {
+            const lines = text.split('\n');
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+            lines.forEach(line => {
+                const values = line.match(/\d+(\.\d+)?/g); // Extract numeric values
+                if (values && values.length >= 2) {
+                    const row = `<tr><td>${parseFloat(values[0]) || 0}</td><td>${parseFloat(values[1]) || 0}</td></tr>`;
+                    tableBody.innerHTML += row;
+                }
+            });
+        }
+        
+        function calculateSum() {
+            let sum1 = 0, sum2 = 0;
+            document.querySelectorAll('#salesTable tbody tr').forEach(row => {
+                const cols = row.getElementsByTagName('td');
+                sum1 += parseFloat(cols[0].textContent) || 0;
+                sum2 += parseFloat(cols[1].textContent) || 0;
+            });
+            
+            const tableBody = document.getElementById('tableBody');
+            const newRow = `<tr style="font-weight:bold;"><td>${sum1}</td><td>${sum2}</td></tr>`;
+            tableBody.innerHTML += newRow;
+            document.getElementById('result').innerText = `Sum: ${sum1} and ${sum2}`;
+        }
+        
+        function applyMultiplier() {
+            const multiplier = prompt("Enter multiplier (e.g., 2)");
+            if (!multiplier || isNaN(multiplier)) return;
+            
+            let lastRow = document.querySelector('#salesTable tbody tr:last-child');
+            const cols = lastRow.getElementsByTagName('td');
+            cols[0].textContent = parseFloat(cols[0].textContent) * multiplier;
+            cols[1].textContent = parseFloat(cols[1].textContent) * multiplier;
+            document.getElementById('result').innerText += ` | After Multiplier: ${cols[0].textContent} and ${cols[1].textContent}`;
+        }
+    </script>
+</body>
+</html>
