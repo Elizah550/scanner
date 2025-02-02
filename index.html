@@ -9,16 +9,6 @@
         body { font-family: Arial, sans-serif; text-align: center; }
         video { width: 80%; margin: 20px auto; display: block; }
         canvas { display: none; }
-        #scanner-box {
-            position: absolute;
-            border: 2px solid red;
-            resize: both;
-            overflow: hidden;
-            width: 200px;
-            height: 100px;
-            top: 50px;
-            left: 50px;
-        }
         table { width: 80%; margin: 20px auto; border-collapse: collapse; }
         th, td { border: 1px solid black; padding: 8px; text-align: center; cursor: pointer; }
         th { background-color: #f2f2f2; }
@@ -28,7 +18,6 @@
 <body>
     <h2>Sales Report Scanner</h2>
     <video id="camera" autoplay></video>
-    <div id="scanner-box" contenteditable="true"></div>
     <button onclick="captureImage()">Scan Table</button>
     <canvas id="canvas"></canvas>
     <br><br>
@@ -52,11 +41,9 @@
             .catch(err => console.error("Camera access error:", err));
 
         function captureImage() {
-            const scannerBox = document.getElementById('scanner-box');
-            const boxRect = scannerBox.getBoundingClientRect();
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-            ctx.drawImage(video, boxRect.left, boxRect.top, boxRect.width, boxRect.height, 0, 0, boxRect.width, boxRect.height);
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             canvas.toBlob(blob => {
                 Tesseract.recognize(blob, 'eng', { logger: m => console.log(m) })
                     .then(({ data: { text } }) => parseTextToTable(text));
