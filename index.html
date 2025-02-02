@@ -22,14 +22,14 @@
         table { width: 80%; margin: 20px auto; border-collapse: collapse; }
         th, td { border: 1px solid black; padding: 8px; text-align: center; cursor: pointer; }
         th { background-color: #f2f2f2; }
+        td { contenteditable: true; }
     </style>
 </head>
 <body>
     <h2>Sales Report Scanner</h2>
-    <div id="scanner-box" contenteditable="true"></div>
     <video id="camera" autoplay></video>
-    <button onclick="startScanning(1)">Open Scanner for Column 1</button>
-    <button onclick="startScanning(2)">Open Scanner for Column 2</button>
+    <div id="scanner-box" contenteditable="true"></div>
+    <button onclick="captureImage()">Scan Table</button>
     <canvas id="canvas"></canvas>
     <br><br>
     <table id="salesTable">
@@ -46,16 +46,10 @@
         const video = document.getElementById('camera');
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-        let currentColumn = 1;
 
         navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
             .then(stream => video.srcObject = stream)
             .catch(err => console.error("Camera access error:", err));
-
-        function startScanning(column) {
-            currentColumn = column;
-            captureImage();
-        }
 
         function captureImage() {
             const scannerBox = document.getElementById('scanner-box');
@@ -65,22 +59,19 @@
             ctx.drawImage(video, boxRect.left, boxRect.top, boxRect.width, boxRect.height, 0, 0, boxRect.width, boxRect.height);
             canvas.toBlob(blob => {
                 Tesseract.recognize(blob, 'eng', { logger: m => console.log(m) })
-                    .then(({ data: { text } }) => parseTextToTable(text, currentColumn));
+                    .then(({ data: { text } }) => parseTextToTable(text));
             });
         }
         
-        function parseTextToTable(text, column) {
+        function parseTextToTable(text) {
             const lines = text.split('\n');
             const tableBody = document.getElementById('tableBody');
-            lines.forEach((line, index) => {
+            tableBody.innerHTML = '';
+            lines.forEach(line => {
                 const values = line.match(/\d+(\.\d+)?/g);
-                if (values && values.length > 0) {
-                    let rows = tableBody.getElementsByTagName('tr');
-                    if (rows.length <= index) {
-                        tableBody.innerHTML += '<tr><td></td><td></td></tr>';
-                        rows = tableBody.getElementsByTagName('tr');
-                    }
-                    rows[index].getElementsByTagName('td')[column - 1].textContent = values[0] || 0;
+                if (values && values.length >= 2) {
+                    const row = `<tr><td contenteditable="true">${parseFloat(values[0]) || 0}</td><td contenteditable="true">${parseFloat(values[1]) || 0}</td></tr>`;
+                    tableBody.innerHTML += row;
                 }
             });
         }
