@@ -18,7 +18,8 @@
 <body>
     <h2>Sales Report Scanner</h2>
     <video id="camera" autoplay></video>
-    <button onclick="captureImage()">Scan Table</button>
+    <button onclick="captureColumn(1)">Scan Column 1</button>
+    <button onclick="captureColumn(2)">Scan Column 2</button>
     <canvas id="canvas"></canvas>
     <br><br>
     <table id="salesTable">
@@ -35,10 +36,16 @@
         const video = document.getElementById('camera');
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
+        let currentColumn = 1;
 
         navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
             .then(stream => video.srcObject = stream)
             .catch(err => console.error("Camera access error:", err));
+
+        function captureColumn(column) {
+            currentColumn = column;
+            captureImage();
+        }
 
         function captureImage() {
             canvas.width = video.videoWidth;
@@ -46,19 +53,22 @@
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             canvas.toBlob(blob => {
                 Tesseract.recognize(blob, 'eng', { logger: m => console.log(m) })
-                    .then(({ data: { text } }) => parseTextToTable(text));
+                    .then(({ data: { text } }) => parseTextToTable(text, currentColumn));
             });
         }
         
-        function parseTextToTable(text) {
+        function parseTextToTable(text, column) {
             const lines = text.split('\n');
             const tableBody = document.getElementById('tableBody');
-            tableBody.innerHTML = '';
-            lines.forEach(line => {
+            lines.forEach((line, index) => {
                 const values = line.match(/\d+(\.\d+)?/g);
-                if (values && values.length >= 2) {
-                    const row = `<tr><td contenteditable="true">${parseFloat(values[0]) || 0}</td><td contenteditable="true">${parseFloat(values[1]) || 0}</td></tr>`;
-                    tableBody.innerHTML += row;
+                if (values && values.length > 0) {
+                    let rows = tableBody.getElementsByTagName('tr');
+                    if (rows.length <= index) {
+                        tableBody.innerHTML += '<tr><td></td><td></td></tr>';
+                        rows = tableBody.getElementsByTagName('tr');
+                    }
+                    rows[index].getElementsByTagName('td')[column - 1].textContent = values[0] || 0;
                 }
             });
         }
