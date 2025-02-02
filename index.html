@@ -7,16 +7,19 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.0.2/tesseract.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; }
-        #video { width: 100%; max-width: 400px; }
+        #video { width: 100%; max-width: 400px; height: auto; }
         #canvas { display: none; }
         .loading { display: none; width: 100%; height: 5px; background: lightgray; }
         .progress { height: 100%; background: green; width: 0%; transition: width 0.5s; }
         table { width: 50%; margin: auto; border-collapse: collapse; }
         th, td { border: 1px solid black; padding: 8px; text-align: center; }
+        label { display: block; margin: 10px 0; }
     </style>
 </head>
 <body>
     <h1>Scan & Sum Table</h1>
+    <label for="width">Width: <input type="number" id="width" value="400" onchange="adjustCamera()"></label>
+    <label for="height">Height: <input type="number" id="height" value="300" onchange="adjustCamera()"></label>
     <video id="video" autoplay></video>
     <button onclick="captureColumn()">Scan Table</button>
     <div class="loading"><div class="progress" id="progress"></div></div>
@@ -33,9 +36,20 @@
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
         const progressBar = document.getElementById('progress');
-        navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
-            video.srcObject = stream;
-        });
+
+        function startCamera() {
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: 400, height: 300 } })
+                .then(stream => { video.srcObject = stream; })
+                .catch(err => console.error("Error accessing camera: ", err));
+        }
+        startCamera();
+
+        function adjustCamera() {
+            const width = document.getElementById('width').value;
+            const height = document.getElementById('height').value;
+            video.width = width;
+            video.height = height;
+        }
 
         function captureColumn() {
             document.querySelector('.loading').style.display = 'block';
