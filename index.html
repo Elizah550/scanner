@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Handwritten Scan & Sum Table</title>
+    <title>Scan & Sum Table</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.0.2/tesseract.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; }
@@ -17,7 +17,7 @@
     </style>
 </head>
 <body>
-    <h1>Handwritten Scan & Sum Table</h1>
+    <h1>Scan & Sum Table</h1>
     <label for="width">Width: <input type="number" id="width" value="400" onchange="adjustCamera()"></label>
     <label for="height">Height: <input type="number" id="height" value="300" onchange="adjustCamera()"></label>
     <video id="video" autoplay></video>
@@ -59,18 +59,20 @@
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            
+
+            // Convert image to grayscale and increase contrast
             let imageData = context.getImageData(0, 0, canvas.width, canvas.height);
             let data = imageData.data;
             for (let i = 0; i < data.length; i += 4) {
                 let avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-                data[i] = data[i + 1] = data[i + 2] = avg > 128 ? 255 : 0; 
+                let enhanced = avg > 127 ? 255 : 0; 
+                data[i] = data[i + 1] = data[i + 2] = enhanced;
             }
             context.putImageData(imageData, 0, 0);
             
             Tesseract.recognize(canvas.toDataURL(), 'eng', {
-                logger: m => progressBar.style.width = Math.min(m.progress * 100, 100) + '%',
-                tessedit_char_whitelist: '0123456789'
+                tessedit_char_whitelist: '0123456789',
+                logger: m => progressBar.style.width = Math.min(m.progress * 100, 100) + '%'
             }).then(({ data: { text } }) => {
                 processText(text);
                 document.querySelector('.loading').style.display = 'none';
